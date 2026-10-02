@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BancaFácil</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f7f4;color:#17221b;padding-bottom:75px}
+header{background:linear-gradient(135deg,#087f3d,#0aa653);color:white;padding:22px 16px;text-align:center;box-shadow:0 3px 12px #0002}
+header h1{margin:0;font-size:29px} header p{margin:6px 0 0;font-size:13px;opacity:.9}
+main{padding:16px;max-width:700px;margin:auto}.page{display:none}.page.active{display:block}
+h2{margin-top:8px}.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:white;padding:16px;border-radius:16px;box-shadow:0 2px 9px #0001}.card small{color:#666}
+.card strong{display:block;font-size:20px;margin-top:8px}.profit-card{border-left:4px solid #087f3d}
+button{cursor:pointer;font-family:inherit}.primary{width:100%;border:0;border-radius:13px;background:#087f3d;color:white;padding:14px;font-size:16px;margin:7px 0;font-weight:bold}
+.secondary{width:100%;border:1px solid #087f3d;border-radius:13px;background:white;color:#087f3d;padding:13px;font-size:15px;margin:5px 0}
+.danger{background:#b00020;color:white;border:0;border-radius:9px;padding:8px 11px}.edit{background:#e7f5ed;color:#087f3d;border:0;border-radius:9px;padding:8px 11px}
+input,select{width:100%;padding:13px;border:1px solid #ccc;border-radius:10px;margin:5px 0 12px;background:white;font-size:15px}
+label{font-size:13px;font-weight:bold}.item{background:white;padding:14px;border-radius:13px;margin:9px 0;box-shadow:0 1px 7px #0001}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}.actions{display:flex;gap:7px;margin-top:12px}.actions button{flex:1}
+.badge{background:#e7f5ed;color:#087f3d;padding:5px 8px;border-radius:8px;font-size:12px}.low{background:#ffecec;color:#b00020}
+.success{color:#087f3d;font-weight:bold}.expense{color:#b00020;font-weight:bold}.empty{text-align:center;color:#777;padding:30px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:white;border-top:1px solid #ddd;z-index:20;box-shadow:0 -2px 8px #0001}
+nav button{flex:1;border:0;background:white;padding:10px 3px;color:#555;font-size:12px}nav button.active{color:#087f3d;font-weight:bold}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;z-index:50}.modal.show{display:flex}
+.box{background:white;width:100%;border-radius:20px 20px 0 0;padding:20px;max-height:92vh;overflow:auto}
+.close{float:right;border:0;border-radius:50%;width:34px;height:34px;font-size:20px}hr{border:0;border-top:1px solid #eee;margin:12px 0}
+.stat{background:#fff;border-radius:13px;padding:13px;margin:8px 0}.warning{background:#fff4e5;color:#8a4b00;padding:12px;border-radius:12px;margin:10px 0}
+.section-title{display:flex;justify-content:space-between;align-items:center}.small-btn{border:0;background:#e7f5ed;color:#087f3d;border-radius:8px;padding:7px 10px}
+</style>
+</head>
+<body>
+<header><h1>🟢 BancaFácil</h1><p>Controle o seu negócio na palma da mão.</p></header>
+<main>
+
+<section id="home" class="page active">
+<h2>Resumo de hoje</h2>
+<div class="cards">
+<div class="card"><small>💰 Vendas</small><strong id="todaySales">0 MZN</strong></div>
+<div class="card profit-card"><small>📈 Lucro real</small><strong id="todayProfit">0 MZN</strong></div>
+<div class="card"><small>📦 Produtos</small><strong id="productCount">0</strong></div>
+<div class="card"><small>⚠️ Estoque baixo</small><strong id="lowCount">0</strong></div>
+</div>
+<div id="lowWarning"></div>
+<br>
+<button class="primary" onclick="openSale()">🛒 Registrar venda</button>
+<button class="secondary" onclick="openProduct()">➕ Adicionar produto</button>
+<button class="secondary" onclick="openExpense()">💸 Registrar despesa</button>
+<h2>Últimas vendas</h2><div id="recentSales"></div>
+</section>
+
+<section id="products" class="page">
+<div class="section-title"><h2>📦 Produtos</h2><button class="small-btn" onclick="openProduct()">＋</button></div>
+<input class="search" id="productSearch" placeholder="🔎 Procurar produto..." oninput="renderProducts()">
+<button class="primary" onclick="openProduct()">➕ Adicionar produto</button>
+<div id="productList"></div>
+</section>
+
+<section id="sales" class="page">
+<h2>💰 Vendas</h2>
+<input class="search" id="salesSearch" placeholder="🔎 Procurar venda..." oninput="renderSales()">
+<div id="salesSummary"></div><div id="salesList"></div>
+</section>
+
+<section id="reports" class="page">
+<h2>📊 Relatórios</h2>
+<div class="cards">
+<div class="card"><small>Vendas hoje</small><strong id="rSales">0 MZN</strong></div>
+<div class="card"><small>Lucro real hoje</small><strong id="rProfit">0 MZN</strong></div>
+<div class="card"><small>Vendas este mês</small><strong id="mSales">0 MZN</strong></div>
+<div class="card"><small>Lucro real este mês</small><strong id="mProfit">0 MZN</strong></div>
+</div>
+<div class="stat"><b>💸 Despesas hoje</b><div class="expense" id="rExpenses">0 MZN</div></div>
+<div class="stat"><b>💸 Despesas este mês</b><div class="expense" id="mExpenses">0 MZN</div></div>
+<div class="stat"><b>🧾 Total de vendas registradas</b><div id="totalSaleCount">0</div></div>
+<div class="stat"><b>📦 Valor do estoque</b><div id="stockValue">0 MZN</div></div>
+<h3>💸 Últimas despesas</h3><div id="expenseList"></div>
+</section>
+</main>
+
+<nav>
+<button class="active" onclick="showPage('home',this)">🏠<br>Início</button>
+<button onclick="showPage('products',this)">📦<br>Produtos</button>
+<button onclick="showPage('sales',this)">💰<br>Vendas</button>
+<button onclick="showPage('reports',this)">📊<br>Relatórios</button>
+</nav>
+
+<div id="productModal" class="modal"><div class="box">
+<button class="close" onclick="closeModal('productModal')">×</button>
+<h2 id="productModalTitle">Adicionar produto</h2>
+<label>Nome do produto</label><input id="pName" placeholder="Ex.: Coca-Cola">
+<label>Preço de compra (MZN)</label><input id="pCost" type="number" min="0" placeholder="Ex.: 50">
+<label>Preço de venda (MZN)</label><input id="pPrice" type="number" min="0" placeholder="Ex.: 70">
+<label>Quantidade em estoque</label><input id="pStock" type="number" min="0" placeholder="Ex.: 20">
+<label>Estoque mínimo</label><input id="pMin" type="number" min="0" value="5">
+<button class="primary" onclick="saveProduct()">💾 Guardar produto</button>
+</div></div>
+
+<div id="saleModal" class="modal"><div class="box">
+<button class="close" onclick="closeModal('saleModal')">×</button>
+<h2>🛒 Registrar venda</h2>
+<label>Produto</label><select id="saleProduct"></select>
+<label>Quantidade</label><input id="saleQty" type="number" value="1" min="1">
+<div id="saleInfo"></div>
+<button class="primary" onclick="saveSale()">✅ Confirmar venda</button>
+</div></div>
+
+<div id="expenseModal" class="modal"><div class="box">
+<button class="close" onclick="closeModal('expenseModal')">×</button>
+<h2>💸 Registrar despesa</h2>
+<label>Descrição</label><input id="eName" placeholder="Ex.: Transporte">
+<label>Valor (MZN)</label><input id="eValue" type="number" min="0" placeholder="Ex.: 100">
+<button class="primary" onclick="saveExpense()">💾 Guardar despesa</button>
+</div></div>
+
+<script>
+let products=JSON.parse(localStorage.getItem("bf_products")||"[]");
+let sales=JSON.parse(localStorage.getItem("bf_sales")||"[]");
+let expenses=JSON.parse(localStorage.getItem("bf_expenses")||"[]");
+let editingProductId=null;
+
+function saveData(){
+ localStorage.setItem("bf_products",JSON.stringify(products));
+ localStorage.setItem("bf_sales",JSON.stringify(sales));
+ localStorage.setItem("bf_expenses",JSON.stringify(expenses));
+}
+function money(n){
+ return Number(n||0).toLocaleString("pt-MZ",{minimumFractionDigits:2,maximumFractionDigits:2})+" MZN";
+}
+function today(date){
+ let d=new Date(date),n=new Date();
+ return d.getFullYear()==n.getFullYear()&&d.getMonth()==n.getMonth()&&d.getDate()==n.getDate();
+}
+function month(date){
+ let d=new Date(date),n=new Date();
+ return d.getFullYear()==n.getFullYear()&&d.getMonth()==n.getMonth();
+}
+function showPage(id,button){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+ button.classList.add("active");render();window.scrollTo(0,0);
+}
+function openProduct(){
+ editingProductId=null;
+ document.getElementById("productModalTitle").textContent="Adicionar produto";
+ ["pName","pCost","pPrice","pStock"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("pMin").value=5;
+ document.getElementById("productModal").classList.add("show");
+}
+function editProduct(id){
+ let p=products.find(x=>x.id===id);if(!p)return;
+ editingProductId=id;
+ document.getElementById("productModalTitle").textContent="✏️ Editar produto";
+ document.getElementById("pName").value=p.name;
+ document.getElementById("pCost").value=p.cost;
+ document.getElementById("pPrice").value=p.price;
+ document.getElementById("pStock").value=p.stock;
+ document.getElementById("pMin").value=p.min;
+ document.getElementById("productModal").classList.add("show");
+}
+function openSale(){
+ if(products.length==0){alert("Primeiro adicione um produto.");return;}
+ if(!products.some(p=>p.stock>0)){alert("Não há produtos com estoque disponível.");return;}
+ document.getElementById("saleModal").classList.add("show");fillProducts();
+}
+function openExpense(){
+ document.getElementById("eName").value="";document.getElementById("eValue").value="";
+ document.getElementById("expenseModal").classList.add("show");
+}
+function closeModal(id){document.getElementById(id).classList.remove("show");}
+
+function saveProduct(){
+ let name=document.getElementById("pName").value.trim();
+ let cost=Number(document.getElementById("pCost").value);
+ let price=Number(document.getElementById("pPrice").value);
+ let stock=Number(document.getElementById("pStock").value);
+ let min=Number(document.getElementById("pMin").value);
+ if(!name){alert("Digite o nome do produto.");return;}
+ if(cost<0||price<=0||stock<0||min<0){alert("Verifique os valores introduzidos.");return;}
+ if(editingProductId){
+  let p=products.find(x=>x.id===editingProductId);
+  if(p){p.name=name;p.cost=cost;p.price=price;p.stock=stock;p.min=min;}
+ }else{
+  products.push({id:Date.now(),name,cost,price,stock,min});
+ }
+ saveData();closeModal("productModal");render();
+ alert(editingProductId?"Produto atualizado com sucesso!":"Produto adicionado com sucesso!");
+ editingProductId=null;
+}
+function deleteProduct(id){
+ let p=products.find(x=>x.id===id);if(!p)return;
+ if(!confirm('Excluir o produto "'+p.name+'"?'))return;
+ products=products.filter(x=>x.id!==id);saveData();render();
+}
+function fillProducts(){
+ let select=document.getElementById("saleProduct");select.innerHTML="";
+ products.forEach((p,i)=>{
+  if(p.stock<=0)return;
+  let option=document.createElement("option");
+  option.value=i;option.textContent=p.name+" — estoque: "+p.stock;select.appendChild(option);
+ });
+ updateSaleInfo();
+}
+document.getElementById("saleProduct").addEventListener("change",updateSaleInfo);
+document.getElementById("saleQty").addEventListener("input",updateSaleInfo);
+function updateSaleInfo(){
+ let i=Number(document.getElementById("saleProduct").value);
+ let q=Number(document.getElementById("saleQty").value)||1,p=products[i];
+ if(!p)return;
+ let total=p.price*q,profit=(p.price-p.cost)*q;
+ document.getElementById("saleInfo").innerHTML='<div class="item"><b>Total:</b> '+money(total)+'<br><b>Lucro:</b> <span class="success">'+money(profit)+'</span><br><small>Estoque disponível: '+p.stock+'</small></div>';
+}
+function saveSale(){
+ let i=Number(document.getElementById("saleProduct").value);
+ let q=Number(document.getElementById("saleQty").value),p=products[i];
+ if(!p||q<1||q>p.stock){alert("Quantidade inválida ou estoque insuficiente.");return;}
+ let total=p.price*q,profit=(p.price-p.cost)*q;
+ p.stock-=q;
+ sales.unshift({id:Date.now(),product:p.name,qty:q,total,profit,date:new Date().toISOString()});
+ saveData();closeModal("saleModal");document.getElementById("saleQty").value=1;render();
+ alert("Venda registrada com sucesso!");
+ if(p.stock<=p.min)setTimeout(()=>alert("⚠️ Atenção: o estoque de "+p.name+" está baixo."),300);
+}
+function saveExpense(){
+ let name=document.getElementById("eName").value.trim(),value=Number(document.getElementById("eValue").value);
+ if(!name){alert("Digite a descrição da despesa.");return;}
+ if(value<=0){alert("Digite um valor válido.");return;}
+ expenses.unshift({id:Date.now(),name,value,date:new Date().toISOString()});
+ saveData();closeModal("expenseModal");render();alert("Despesa registrada com sucesso!");
+}
+
+function render(){
+ let ts=sales.filter(s=>today(s.date)).reduce((a,s)=>a+s.total,0);
+ let gp=sales.filter(s=>today(s.date)).reduce((a,s)=>a+s.profit,0);
+ let te=expenses.filter(e=>today(e.date)).reduce((a,e)=>a+e.value,0);
+ let ms=sales.filter(s=>month(s.date)).reduce((a,s)=>a+s.total,0);
+ let mg=sales.filter(s=>month(s.date)).reduce((a,s)=>a+s.profit,0);
+ let me=expenses.filter(e=>month(e.date)).reduce((a,e)=>a+e.value,0);
+ let lows=products.filter(p=>p.stock<=p.min);
+ document.getElementById("todaySales").textContent=money(ts);
+ document.getElementById("todayProfit").textContent=money(gp-te);
+ document.getElementById("productCount").textContent=products.length;
+ document.getElementById("lowCount").textContent=lows.length;
+ document.getElementById("rSales").textContent=money(ts);
+ document.getElementById("rProfit").textContent=money(gp-te);
+ document.getElementById("mSales").textContent=money(ms);
+ document.getElementById("mProfit").textContent=money(mg-me);
+ document.getElementById("rExpenses").textContent=money(te);
+ document.getElementById("mExpenses").textContent=money(me);
+ document.getElementById("totalSaleCount").textContent=sales.length;
+ document.getElementById("stockValue").textContent=money(products.reduce((a,p)=>a+p.cost*p.stock,0));
+ document.getElementById("lowWarning").innerHTML=lows.length?'<div class="warning">⚠️ <b>Atenção:</b> '+lows.length+' produto(s) com estoque baixo.</div>':"";
+ renderProducts();renderSales();renderRecent();renderExpenses();
+}
+function renderProducts(){
+ let box=document.getElementById("productList"),search=(document.getElementById("productSearch")?.value||"").toLowerCase().trim();
+ let list=products.filter(p=>p.name.toLowerCase().includes(search));
+ if(!list.length){box.innerHTML='<div class="empty">'+(products.length?"Nenhum produto encontrado.":"Nenhum produto cadastrado.")+'</div>';return;}
+ box.innerHTML="";
+ list.forEach(p=>{
+  let low=p.stock<=p.min;
+  box.innerHTML+='<div class="item"><div class="row"><b>'+esc(p.name)+'</b><span class="badge '+(low?"low":"")+'">'+(low?"⚠️ Estoque baixo":"Estoque OK")+'</span></div><hr>Compra: '+money(p.cost)+'<br>Venda: '+money(p.price)+'<br>Estoque: <b>'+p.stock+'</b><br>Lucro por unidade: <span class="success">'+money(p.price-p.cost)+'</span><div class="actions"><button class="edit" onclick="editProduct('+p.id+')">✏️ Editar</button><button class="danger" onclick="deleteProduct('+p.id+')">🗑️ Excluir</button></div></div>';
+ });
+}
+function renderSales(){
+ let box=document.getElementById("salesList"),search=(document.getElementById("salesSearch")?.value||"").toLowerCase().trim();
+ let list=sales.filter(s=>s.product.toLowerCase().includes(search));
+ let tt=sales.filter(s=>today(s.date)).reduce((a,s)=>a+s.total,0),tp=sales.filter(s=>today(s.date)).reduce((a,s)=>a+s.profit,0);
+ document.getElementById("salesSummary").innerHTML='<div class="stat">Hoje: <b>'+money(tt)+'</b> &nbsp; | &nbsp; Lucro bruto: <span class="success">'+money(tp)+'</span></div>';
+ if(!list.length){box.innerHTML='<div class="empty">Nenhuma venda encontrada.</div>';return;}
+ box.innerHTML="";
+ list.forEach(s=>box.innerHTML+='<div class="item"><div class="row"><b>'+esc(s.product)+' × '+s.qty+'</b><b>'+money(s.total)+'</b></div><small>'+new Date(s.date).toLocaleString("pt-MZ")+'</small><br><span class="success">Lucro bruto: '+money(s.profit)+'</span></div>');
+}
+function renderRecent(){
+ let box=document.getElementById("recentSales"),recent=sales.slice(0,5);
+ if(!recent.length){box.innerHTML='<div class="empty">Ainda não há vendas.</div>';return;}
+ box.innerHTML="";
+ recent.forEach(s=>box.innerHTML+='<div class="item"><div class="row"><b>'+esc(s.product)+' × '+s.qty+'</b><span>'+money(s.total)+'</span></div><small>Lucro: '+money(s.profit)+'</small></div>');
+}
+function renderExpenses(){
+ let box=document.getElementById("expenseList");
+ if(!expenses.length){box.innerHTML='<div class="empty">Nenhuma despesa registrada.</div>';return;}
+ box.innerHTML="";
+ expenses.slice(0,10).forEach(e=>box.innerHTML+='<div class="item"><div class="row"><b>💸 '+esc(e.name)+'</b><span class="expense">'+money(e.value)+'</span></div><small>'+new Date(e.date).toLocaleString("pt-MZ")+'</small></div>');
+}
+function esc(t){
+ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+render();
+</script>
+</body>
+</html>
