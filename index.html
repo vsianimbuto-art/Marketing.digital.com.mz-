@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BancaFácil</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#f3f7f4;
+ color:#17221b
+}
+header{
+ background:#087f3d;
+ color:white;
+ padding:20px;
+ text-align:center
+}
+header h1{margin:0;font-size:27px}
+header p{margin:6px 0 0;font-size:13px}
+
+main{padding:16px;max-width:700px;margin:auto}
+
+.page{display:none}
+.page.active{display:block}
+
+.cards{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px
+}
+.card{
+ background:white;
+ padding:16px;
+ border-radius:14px;
+ box-shadow:0 2px 8px #0001
+}
+.card small{color:#666}
+.card strong{
+ display:block;
+ font-size:20px;
+ margin-top:8px
+}
+
+button{
+ cursor:pointer
+}
+.primary{
+ width:100%;
+ border:0;
+ border-radius:12px;
+ background:#087f3d;
+ color:white;
+ padding:14px;
+ font-size:16px;
+ margin:8px 0
+}
+.secondary{
+ width:100%;
+ border:1px solid #087f3d;
+ border-radius:12px;
+ background:white;
+ color:#087f3d;
+ padding:13px;
+ font-size:15px
+}
+
+input,select{
+ width:100%;
+ padding:13px;
+ border:1px solid #ccc;
+ border-radius:10px;
+ margin:5px 0 12px;
+ background:white;
+ font-size:15px
+}
+label{
+ font-size:13px;
+ font-weight:bold
+}
+
+.item{
+ background:white;
+ padding:14px;
+ border-radius:12px;
+ margin:9px 0;
+ box-shadow:0 1px 6px #0001
+}
+.row{
+ display:flex;
+ justify-content:space-between;
+ gap:10px;
+ align-items:center
+}
+.badge{
+ background:#e7f5ed;
+ color:#087f3d;
+ padding:5px 8px;
+ border-radius:8px;
+ font-size:12px
+}
+.low{
+ background:#ffecec;
+ color:#b00020
+}
+.success{
+ color:#087f3d;
+ font-weight:bold
+}
+.empty{
+ text-align:center;
+ color:#777;
+ padding:30px
+}
+
+nav{
+ position:fixed;
+ bottom:0;
+ left:0;
+ right:0;
+ display:flex;
+ background:white;
+ border-top:1px solid #ddd
+}
+nav button{
+ flex:1;
+ border:0;
+ background:white;
+ padding:11px 4px;
+ color:#555;
+ font-size:12px
+}
+nav button.active{
+ color:#087f3d;
+ font-weight:bold
+}
+
+.modal{
+ position:fixed;
+ inset:0;
+ background:#0008;
+ display:none;
+ align-items:flex-end;
+ z-index:10
+}
+.modal.show{display:flex}
+.box{
+ background:white;
+ width:100%;
+ border-radius:20px 20px 0 0;
+ padding:20px;
+ max-height:90vh;
+ overflow:auto
+}
+.close{
+ float:right;
+ border:0;
+ border-radius:50%;
+ width:34px;
+ height:34px
+}
+hr{
+ border:0;
+ border-top:1px solid #eee;
+ margin:12px 0
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🟢 BancaFácil</h1>
+<p>Controle o seu negócio na palma da mão.</p>
+</header>
+
+<main>
+
+<!-- INÍCIO -->
+<section id="home" class="page active">
+
+<h2>Resumo de hoje</h2>
+
+<div class="cards">
+
+<div class="card">
+<small>💰 Vendas</small>
+<strong id="todaySales">0 MZN</strong>
+</div>
+
+<div class="card">
+<small>📈 Lucro</small>
+<strong id="todayProfit">0 MZN</strong>
+</div>
+
+<div class="card">
+<small>📦 Produtos</small>
+<strong id="productCount">0</strong>
+</div>
+
+<div class="card">
+<small>⚠️ Estoque baixo</small>
+<strong id="lowCount">0</strong>
+</div>
+
+</div>
+
+<br>
+
+<button class="primary" onclick="openSale()">
+🛒 Registrar venda
+</button>
+
+<button class="secondary" onclick="openProduct()">
+➕ Adicionar produto
+</button>
+
+<h2>Últimas vendas</h2>
+
+<div id="recentSales"></div>
+
+</section>
+
+
+<!-- PRODUTOS -->
+<section id="products" class="page">
+
+<div class="row">
+<h2>📦 Produtos</h2>
+</div>
+
+<button class="primary" onclick="openProduct()">
+➕ Adicionar produto
+</button>
+
+<div id="productList"></div>
+
+</section>
+
+
+<!-- VENDAS -->
+<section id="sales" class="page">
+
+<h2>💰 Vendas</h2>
+
+<div id="salesList"></div>
+
+</section>
+
+
+<!-- RELATÓRIOS -->
+<section id="reports" class="page">
+
+<h2>📊 Relatórios</h2>
+
+<div class="cards">
+
+<div class="card">
+<small>Vendas hoje</small>
+<strong id="rSales">0 MZN</strong>
+</div>
+
+<div class="card">
+<small>Lucro hoje</small>
+<strong id="rProfit">0 MZN</strong>
+</div>
+
+<div class="card">
+<small>Vendas este mês</small>
+<strong id="mSales">0 MZN</strong>
+</div>
+
+<div class="card">
+<small>Lucro este mês</small>
+<strong id="mProfit">0 MZN</strong>
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+
+<!-- MENU -->
+<nav>
+
+<button class="active" onclick="showPage('home',this)">
+🏠<br>Início
+</button>
+
+<button onclick="showPage('products',this)">
+📦<br>Produtos
+</button>
+
+<button onclick="showPage('sales',this)">
+💰<br>Vendas
+</button>
+
+<button onclick="showPage('reports',this)">
+📊<br>Relatórios
+</button>
+
+</nav>
+
+
+<!-- JANELA PRODUTO -->
+<div id="productModal" class="modal">
+
+<div class="box">
+
+<button class="close" onclick="closeModal('productModal')">×</button>
+
+<h2>Adicionar produto</h2>
+
+<label>Nome do produto</label>
+<input id="pName" placeholder="Ex.: Coca-Cola">
+
+<label>Preço de compra (MZN)</label>
+<input id="pCost" type="number" placeholder="Ex.: 50">
+
+<label>Preço de venda (MZN)</label>
+<input id="pPrice" type="number" placeholder="Ex.: 70">
+
+<label>Quantidade em estoque</label>
+<input id="pStock" type="number" placeholder="Ex.: 20">
+
+<label>Estoque mínimo</label>
+<input id="pMin" type="number" value="5">
+
+<button class="primary" onclick="saveProduct()">
+Guardar produto
+</button>
+
+</div>
+</div>
+
+
+<!-- JANELA VENDA -->
+<div id="saleModal" class="modal">
+
+<div class="box">
+
+<button class="close" onclick="closeModal('saleModal')">×</button>
+
+<h2>Registrar venda</h2>
+
+<label>Produto</label>
+<select id="saleProduct"></select>
+
+<label>Quantidade</label>
+<input id="saleQty" type="number" value="1" min="1">
+
+<div id="saleInfo"></div>
+
+<button class="primary" onclick="saveSale()">
+Confirmar venda
+</button>
+
+</div>
+</div>
+
+
+<script>
+
+let products =
+JSON.parse(localStorage.getItem("bf_products") || "[]");
+
+let sales =
+JSON.parse(localStorage.getItem("bf_sales") || "[]");
+
+
+function saveData(){
+
+localStorage.setItem(
+"bf_products",
+JSON.stringify(products)
+);
+
+localStorage.setItem(
+"bf_sales",
+JSON.stringify(sales)
+);
+
+}
+
+
+function money(n){
+
+return Number(n || 0).toLocaleString(
+"pt-MZ",
+{
+minimumFractionDigits:2,
+maximumFractionDigits:2
+}
+)+" MZN";
+
+}
+
+
+function today(date){
+
+let d=new Date(date);
+let n=new Date();
+
+return d.getFullYear()==n.getFullYear()
+&& d.getMonth()==n.getMonth()
+&& d.getDate()==n.getDate();
+
+}
+
+
+function month(date){
+
+let d=new Date(date);
+let n=new Date();
+
+return d.getFullYear()==n.getFullYear()
+&& d.getMonth()==n.getMonth();
+
+}
+
+
+function showPage(id,button){
+
+document.querySelectorAll(".page")
+.forEach(p=>p.classList.remove("active"));
+
+document.getElementById(id)
+.classList.add("active");
+
+document.querySelectorAll("nav button")
+.forEach(b=>b.classList.remove("active"));
+
+button.classList.add("active");
+
+render();
+
+}
+
+
+function openProduct(){
+
+document
+.getElementById("productModal")
+.classList.add("show");
+
+}
+
+
+function openSale(){
+
+if(products.length==0){
+
+alert("Primeiro adicione um produto.");
+
+return;
+
+}
+
+document
+.getElementById("saleModal")
+.classList.add("show");
+
+fillProducts();
+
+}
+
+
+function closeModal(id){
+
+document
+.getElementById(id)
+.classList.remove("show");
+
+}
+
+
+function saveProduct(){
+
+let name=document
+.getElementById("pName").value.trim();
+
+let cost=Number(document
+.getElementById("pCost").value);
+
+let price=Number(document
+.getElementById("pPrice").value);
+
+let stock=Number(document
+.getElementById("pStock").value);
+
+let min=Number(document
+.getElementById("pMin").value);
+
+
+if(!name){
+
+alert("Digite o nome do produto.");
+
+return;
+
+}
+
+
+products.push({
+
+id:Date.now(),
+
+name:name,
+
+cost:cost,
+
+price:price,
+
+stock:stock,
+
+min:min
+
+});
+
+
+saveData();
+
+closeModal("productModal");
+
+document.getElementById("pName").value="";
+document.getElementById("pCost").value="";
+document.getElementById("pPrice").value="";
+document.getElementById("pStock").value="";
+document.getElementById("pMin").value=5;
+
+render();
+
+}
+
+
+function fillProducts(){
+
+let select=
+document.getElementById("saleProduct");
+
+select.innerHTML="";
+
+products.forEach((p,i)=>{
+
+let option=document.createElement("option");
+
+option.value=i;
+
+option.textContent=
+p.name+" — estoque: "+p.stock;
+
+select.appendChild(option);
+
+});
+
+updateSaleInfo();
+
+}
+
+
+document
+.getElementById("saleProduct")
+.addEventListener("change",updateSaleInfo);
+
+document
+.getElementById("saleQty")
+.addEventListener("input",updateSaleInfo);
+
+
+function updateSaleInfo(){
+
+let i=Number(
+document.getElementById("saleProduct").value
+);
+
+let q=Number(
+document.getElementById("saleQty").value
+)||1;
+
+let p=products[i];
+
+if(!p)return;
+
+let total=p.price*q;
+
+let profit=(p.price-p.cost)*q;
+
+document.getElementById("saleInfo")
+.innerHTML=
+
+'<div class="item">'+
+'<b>Total:</b> '+money(total)+
+'<br>'+
+'<b>Lucro:</b> '+
+'<span class="success">'+money(profit)+'</span>'+
+'<br>'+
+'<small>Estoque disponível: '+p.stock+
+'</small>'+
+'</div>';
+
+}
+
+
+function saveSale(){
+
+let i=Number(
+document.getElementById("saleProduct").value
+);
+
+let q=Number(
+document.getElementById("saleQty").value
+);
+
+let p=products[i];
+
+if(!p || q<1 || q>p.stock){
+
+alert("Quantidade inválida ou estoque insuficiente.");
+
+return;
+
+}
+
+
+let total=p.price*q;
+
+let profit=(p.price-p.cost)*q;
+
+
+p.stock-=q;
+
+
+sales.unshift({
+
+id:Date.now(),
+
+product:p.name,
+
+qty:q,
+
+total:total,
+
+profit:profit,
+
+date:new Date().toISOString()
+
+});
+
+
+saveData();
+
+closeModal("saleModal");
+
+document.getElementById("saleQty").value=1;
+
+render();
+
+alert("Venda registrada com sucesso!");
+
+}
+
+
+function render(){
+
+let todaySales=
+sales
+.filter(s=>today(s.date))
+.reduce((a,s)=>a+s.total,0);
+
+let todayProfit=
+sales
+.filter(s=>today(s.date))
+.reduce((a,s)=>a+s.profit,0);
+
+let monthSales=
+sales
+.filter(s=>month(s.date))
+.reduce((a,s)=>a+s.total,0);
+
+let monthProfit=
+sales
+.filter(s=>month(s.date))
+.reduce((a,s)=>a+s.profit,0);
+
+
+document.getElementById("todaySales")
+.textContent=money(todaySales);
+
+document.getElementById("todayProfit")
+.textContent=money(todayProfit);
+
+document.getElementById("productCount")
+.textContent=products.length;
+
+document.getElementById("lowCount")
+.textContent=
+products.filter(p=>p.stock<=p.min).length;
+
+
+document.getElementById("rSales")
+.textContent=money(todaySales);
+
+document.getElementById("rProfit")
+.textContent=money(todayProfit);
+
+document.getElementById("mSales")
+.textContent=money(monthSales);
+
+document.getElementById("mProfit")
+.textContent=money(monthProfit);
+
+
+renderProducts();
+
+renderSales();
+
+renderRecent();
+
+}
+
+
+function renderProducts(){
+
+let box=
+document.getElementById("productList");
+
+if(products.length==0){
+
+box.innerHTML=
+'<div class="empty">'+
+'Nenhum produto cadastrado.'+
+'</div>';
+
+return;
+
+}
+
+
+box.innerHTML="";
+
+
+products.forEach(p=>{
+
+let low=p.stock<=p.min;
+
+box.innerHTML+=
+
+'<div class="item">'+
+
+'<div class="row">'+
+
+'<b>'+p.name+'</b>'+
+
+'<span class="badge '+
+(low?'low':'')+
+'">'+
+(low?'⚠️ Estoque baixo':'Estoque OK')+
+'</span>'+
+
+'</div>'+
+
+'<hr>'+
+
+'Compra: '+money(p.cost)+
+'<br>'+
+'Venda: '+money(p.price)+
+'<br>'+
+'Estoque: <b>'+p.stock+'</b>'+
+'<br>'+
+'Lucro por unidade: '+
+'<span class="success">'+
+money(p.price-p.cost)+
+'</span>'+
+
+'</div>';
+
+});
+
+}
+
+
+function renderSales(){
+
+let box=
+document.getElementById("salesList");
+
+if(sales.length==0){
+
+box.innerHTML=
+'<div class="empty">'+
+'Nenhuma venda registrada.'+
+'</div>';
+
+return;
+
+}
+
+
+box.innerHTML="";
+
+
+sales.forEach(s=>{
+
+box.innerHTML+=
+
+'<div class="item">'+
+
+'<div class="row">'+
+
+'<b>'+s.product+
+' × '+s.qty+'</b>'+
+
+'<b>'+money(s.total)+'</b>'+
+
+'</div>'+
+
+'<small>'+
+new Date(s.date).toLocaleString("pt-MZ")+
+'</small>'+
+
+'<br>'+
+
+'<span class="success">'+
+'Lucro: '+money(s.profit)+
+'</span>'+
+
+'</div>';
+
+});
+
+}
+
+
+function renderRecent(){
+
+let box=
+document.getElementById("recentSales");
+
+let recent=sales.slice(0,5);
+
+if(recent.length==0){
+
+box.innerHTML=
+'<div class="empty">'+
+'Ainda não há vendas.'+
+'</div>';
+
+return;
+
+}
+
+
+box.innerHTML="";
+
+
+recent.forEach(s=>{
+
+box.innerHTML+=
+
+'<div class="item">'+
+
+'<div class="row">'+
+
+'<b>'+s.product+
+' × '+s.qty+'</b>'+
+
+'<span>'+money(s.total)+'</span>'+
+
+'</div>'+
+
+'<small>'+
+'Lucro: '+money(s.profit)+
+'</small>'+
+
+'</div>';
+
+});
+
+}
+
+
+render();
+
+</script>
+
+</body>
+</html>
